@@ -4,17 +4,19 @@
 #include <iomanip>
 #include <vector>
 
+typedef char cp_t;
 
 template<typename data_t>
 class matrix{
     public:
-        data_t *data;
+        data_t data[64];
         int w,h;
         matrix(int x, int y) {
 
             w = x; 
             h = y;
-            data = new data_t[w*h];
+            //data = new data_t[w*h];
+            memset(data,0,w*h*sizeof(data_t));
         }
         ~matrix()
         {
@@ -137,7 +139,65 @@ class matrix{
                 }
             }
         }
-        std::vector<data_t> zigzag(data_t eps)
+        void zagzig(std::vector<cp_t> cps)
+        {
+            int x = 0, y = 0, lx,ly,mode = 0, offset = 0;
+
+            if(cps.empty())return ;
+            auto it = cps.begin();
+            set(0,0, *it++);
+            if(it == cps.end())return ;
+            do
+            {
+                
+                lx = x; ly = y;
+                if(mode == 0)
+                {
+                    x++;
+                    mode = (1 + offset) % 4;
+                }
+                else if(mode == 1)
+                {
+                    if(inbound(x-1, y+1))
+                    {
+                        x--;
+                        y++;
+                    }
+                    else mode = (2 + offset) % 4;
+                }
+                else if(mode == 2)
+                {
+                    y++;
+                    mode = (3 + offset) % 4;
+                    //else mode = 0;
+                }
+                else // mode = 3
+                {
+                    if(inbound(x+1, y-1))
+                    {
+                        x++;
+                        y--;
+                    }
+                    else mode = (0 + offset) % 4;
+                }
+                
+                if(lx!=x || ly!=y )
+                {
+                    
+                    if(!inbound(x,y))
+                    {
+                        offset = 2;
+                    }
+                    else 
+                    {
+                        
+                        set(x,y, *it++);
+                        //std::cout<<x<<' '<<y<<std::endl;
+                    }
+                }
+            }while(it!= cps.end());
+        }
+        std::vector<cp_t> zigzag(data_t eps)
         {
             std::vector<data_t> res;
             int x = 0, y = 0, lx,ly,mode = 0, offset = 0;
@@ -191,7 +251,13 @@ class matrix{
                 }
             }while(x != w - 1 || y != h - 1);
             while(!res.empty() && std::abs(res.back()) < eps)res.pop_back();
-            return res;
+            std::vector<cp_t> ans;
+            for(auto &x : res)
+            {
+                auto y = std::max(std::min(127.0,x), -128.0);
+                ans.push_back(static_cast<cp_t> (y));
+            }
+            return ans;
         }
 
         matrix<data_t> T()

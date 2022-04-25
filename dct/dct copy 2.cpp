@@ -18,9 +18,7 @@ using namespace cimg_library;
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
-typedef double data_t;
-typedef unsigned char pixel_t; 
-typedef char cp_t;
+
 string remove_suf(string x)
 {
     size_t s = x.size();
@@ -41,7 +39,9 @@ void createDir(string dir) {
 
 string image_name;// = "ranni.jpg";
 string image_pure;// = "ranni"
-
+typedef double data_t;
+typedef unsigned char pixel_t; 
+typedef char cp_t;
 
 const int N = 8;
 
@@ -166,13 +166,6 @@ CImg<pixel_t> graying(CImg<pixel_t> src)
     }
     return res;
 }
-
-uint64_t timeSinceEpochMillisec() {
-  using namespace std::chrono;
-  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-}
-
-
 void run(data_t Quality, int nthreads)
 {
     clock_t start = clock();
@@ -199,10 +192,9 @@ void run(data_t Quality, int nthreads)
     
     int blocks = height * width/(N*N);
     int step = (blocks + nthreads - 1)/nthreads;  
-    uint64_t cloc = timeSinceEpochMillisec();
-    #pragma omp parallel
+    #pragma parallel
     {
-        int tid = omp_get_thread_num();
+        tid = omp_get_thread_num();
         total_rate[tid] = 0;
 
         for(int i = tid * step; i < blocks && i < (tid+1)*step; i++)
@@ -211,6 +203,13 @@ void run(data_t Quality, int nthreads)
             int x = i%(width/N);
             y*=N;
             x*=N;
+            
+        }
+    }
+    for(int y = 0; y < height; y += N)
+    {
+        for(int x = 0; x < width; x += N)
+        {
             matrix<double> M(N,N), C(N,N), F(N,N);
             for(int dy = 0; dy < N; dy ++)
             {
@@ -226,9 +225,9 @@ void run(data_t Quality, int nthreads)
             double compression_rate = (double)cps_vec.size()/(N*N);
             //matrix<data_t> C_(N,N);
             //C_.zagzig(cps_vec);
-            cps_vecs[tid].push_back(std::move(cps_vec));
+            cps_vecs.push_back(std::move(cps_vec));
             
-            total_rate[tid] += compression_rate;
+            total_rate += compression_rate;
 
             F = (T.T() * (C ^ Q) * T) + 128; 
 
@@ -243,26 +242,15 @@ void run(data_t Quality, int nthreads)
             }
         }
     }
-    //cout<< timeSinceEpochMillisec() - cloc<<endl;
-    double sum_rate = 0;
-    vector<vector<cp_t>> cps_final;
-    for(int i=0;i<nthreads;i++)
-    {
-        sum_rate += total_rate[i];
-        for(auto &x : cps_vecs[i])
-        {
-            cps_final.push_back(std::move(x));
-        }
-    }
-    dct_times.push_back(timeSinceEpochMillisec() - cloc); start = clock();
-    cout<<"dct : "<<dct_times.back()<<" ms"<<endl;
+    dct_times.push_back(timediff); 
+    printTime("dct");
     
 
     
     vector<vector<char>> d_com;
-    flush_disk(cps_final, final_compress + ".cps");
+    flush_disk(cps_vecs, final_compress + ".cps");
     fetch_disk(d_com, final_compress + ".cps");
-    //assert(check_equal(cps_final, d_com));
+    assert(check_equal(cps_vecs, d_com));
 
 
     printTime("flushing"); 
@@ -293,7 +281,7 @@ void run(data_t Quality, int nthreads)
         src.save(final_compress.c_str());
     }
     printTime("save"); 
-    auto rate = sum_rate * (N*N)/(width * height) * 100;
+    auto rate = total_rate * (N*N)/(width * height) * 100;
     
     cps_rates.push_back(rate);
     std::cout<<"compression rate : "<<rate<<"%"<<std::endl;
@@ -318,7 +306,6 @@ int main(int argc, char *argv[])
 
             case 'n':
                 nthreads = atoi(optarg);
-                break;
 
             case 'i':
                 reconstruct = atoi(optarg);
@@ -332,14 +319,7 @@ int main(int argc, char *argv[])
         }
     } while (opt != -1);
 
-
-    //std::cout<<reconstruct<<std::endl;
     omp_set_num_threads(nthreads);
-
-    
-
-
-
 
 
     image_pure = remove_suf(image_name);
@@ -360,15 +340,12 @@ int main(int argc, char *argv[])
         actual_rates.push_back(actual_rate);
         
     }
-    string dest = image_pure + "/" + image_pure+"_summary_" + std::to_string((int)nthreads) + ".log";
+    string dest = image_pure + "/" + image_pure+"_summary.log";
     freopen(dest.c_str(), "w+", stdout);
-    uint64_t total_time = 0;
     for(size_t i=0;i<cps_rates.size();i++)
     {
         cout<<(i*5 + 5)<<' '<<cps_rates[i]<<"% "<<actual_rates[i]<<"% "<<dct_times[i]<<endl;
-        total_time +=dct_times[i];
     }
-    cout<<total_time<<endl;
     
 
     return 0;
