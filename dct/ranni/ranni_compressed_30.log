@@ -1,5 +1,5 @@
 preprocessing : 0 ms 
-image processing : 30 ms 
+image processing : 20 ms 
 dct : 20 ms
 flushing : 80 ms 
 save : 10 ms 

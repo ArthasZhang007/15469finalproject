@@ -4,7 +4,7 @@
 #include "../CImg/CImg.h"
 #include <omp.h>
 #include <unistd.h>
-#define MAX_NUMTHREADS 8
+#define MAX_NUMTHREADS 16
 #define timediff ((double)(clock() - start))/CLOCKS_PER_SEC * 1000
 #define printTime(msg) {std::cout<<(msg)<<" : "<<timediff<<" ms "<<std::endl; start = clock();}
 

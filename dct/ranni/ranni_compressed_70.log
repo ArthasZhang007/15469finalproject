@@ -1,7 +1,7 @@
 preprocessing : 0 ms 
-image processing : 70 ms 
+image processing : 40 ms 
 dct : 20 ms
-flushing : 80 ms 
+flushing : 70 ms 
 save : 20 ms 
 compression rate : 11.9178%
 279536 386489
