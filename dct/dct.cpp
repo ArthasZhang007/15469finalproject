@@ -125,7 +125,7 @@ void preprocess(data_t Quality)
             ));
         }
     }
-
+    std::cout<<T<<std::endl;
     // the quant matrix
     ifstream qin("quant.txt");
     for(int i = 0; i < N; i++)
@@ -140,7 +140,7 @@ void preprocess(data_t Quality)
 
     if(Quality > 50) Q = Q * ((100.0 - Quality)/50.0);
     if(Quality < 50) Q = Q * (50.0 / Quality);
-
+    std::cout<<Q<<std::endl;
 }
 
 CImg<pixel_t> graying(CImg<pixel_t> src)

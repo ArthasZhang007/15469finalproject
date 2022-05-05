@@ -277,7 +277,7 @@ class matrix{
 template<typename data_t>
 std::ostream& operator <<(std::ostream &os, matrix<data_t> A)
 {
-    os << std::setiosflags(std::ios::fixed)<<std::setprecision(4);
+    os << std::setiosflags(std::ios::fixed)<<std::setprecision(1);
     os << A.w <<' '<<A.h<<std::endl;
     for(int i = 0; i < A.w; i++)
     {
